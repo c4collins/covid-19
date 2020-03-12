@@ -1,5 +1,5 @@
 module.exports = {
-  entry: ["./src/app.js"],
+  entry: ["./src/frontend/app.js"],
   module: {
     rules: [
       {
@@ -10,7 +10,7 @@ module.exports = {
     ]
   },
   output: {
-    path: __dirname + "/static",
+    path: __dirname + "/src/static",
     filename: "bundle.js"
   }
 };
