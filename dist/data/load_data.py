@@ -6,8 +6,8 @@ import sqlite3
 import logging
 from enum import Enum
 
-logger = logging.getLogger("data_load")
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("Data Loader")
 
 
 class data_processes(Enum):
@@ -51,52 +51,73 @@ def load_datafile(file_name, data_mapping, path_level=1):
 
 
 def process_sql(db_path, sql_string="", sql_data=[]):
+    logger.debug(sql_string)
+    logger.debug(sql_data)
     with sqlite3.connect(db_path) as connection:
         cursor = connection.cursor()
-        cursor.executemany(sql_string, sql_data)
+
+        if len(sql_data) > 0:
+            cursor.executemany(sql_string, sql_data)
+        else:
+            cursor.execute(sql_string)
+
+        data = cursor.fetchall()
+        logger.debug(cursor)
+        logger.debug(data)
         connection.commit()
+    return data
 
 
-def insert_data_into_database(db_path, table_name, data, column_names, sql_data):
+def insert_data_into_database(db_path, table_name, field_names, sql_data):
     sql_string = f"INSERT OR IGNORE INTO {table_name} ("
-    sql_string += ", ".join(column_names)
+    sql_string += ", ".join(field_names)
     sql_string += ") VALUES ("
-    sql_string += ", ".join(["?" for x in range(len(column_names))])
-    sql_string += ")"
+    sql_string += ", ".join(["?" for x in range(len(field_names))])
+    sql_string += ");"
     logger.debug(sql_string)
     process_sql(db_path, sql_string, sql_data)
 
 
-def update_database_row(db_path, table_name, data, column_names, sql_data):
+def update_database_row(db_path, table_name, field_names, sql_data):
     sql_string = f"UPDATE OR IGNORE {table_name} SET ("
-    sql_string += ", ".join(column_names)
+    sql_string += ", ".join(field_names)
     sql_string += ") = ("
-    sql_string += ", ".join(["?" for x in range(len(column_names))])
-    sql_string += ")"
+    sql_string += ", ".join(["?" for x in range(len(field_names))])
+    sql_string += ");"
     logger.debug(sql_string)
     process_sql(db_path, sql_string, sql_data)
 
 
-def database(action, db_name, table_name, data, data_mapping):
-    column_names = [map['field_name']
-                    for map in data_mapping.values() if map is not None]
-    sql_data = [[datum[column_name]
-                 for column_name in column_names] for datum in data]
+def select_from_database(db_path, table_name, field_names):
+    sql_string = "SELECT "
+    sql_string += ", ".join(field_names)
+    sql_string += f" FROM {table_name};"
+    logger.debug(sql_string)
+    return process_sql(db_path, sql_string)
+
+
+def database(action, db_name, table_name, data, field_names):
+    sql_data = [[datum[field_name]
+                 for field_name in field_names] for datum in data]
     db_path = get_file_path(f"{db_name}.sqlite3")
     if action == 'insert':
         insert_data_into_database(
-            db_path, table_name, data, column_names, sql_data)
-    if action == 'update':
+            db_path, table_name, field_names, sql_data)
+    elif action == 'update':
         insert_data_into_database(
-            db_path, table_name, data, column_names, sql_data)
+            db_path, table_name, field_names, sql_data)
         update_database_row(
-            db_path, table_name, data, column_names, sql_data)
+            db_path, table_name, field_names, sql_data)
+    elif action == 'select':
+        return select_from_database(db_path, table_name, field_names)
 
 
 def process_datafile(file_name, data_mapping, db_name='geography', table_name="boundary_point", db_action='insert', path_level=2):
     data = load_datafile(file_name, data_mapping)
     # insert_data_into_database(db_name, table_name, data, data_mapping)
-    database(db_action, db_name, table_name, data, data_mapping)
+    field_names = [map['field_name']
+                   for map in data_mapping.values() if map is not None]
+    database(db_action, db_name, table_name, data, field_names)
 
 
 def load_country_data():
