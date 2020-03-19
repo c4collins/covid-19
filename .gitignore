@@ -1,4 +1,7 @@
 node_modules/
 .vscode/
+data/charts/*.png
 data/*.csv
+data/*.geojson
 *.sqlite3
+__pycache__/
