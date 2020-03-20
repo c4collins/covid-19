@@ -9,7 +9,7 @@ import pathlib
 from matplotlib import pyplot as plt
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -33,16 +33,12 @@ def get_daily_data():
                 next(reader)  # skip headers
                 for row in reader:
                     target_data = {key: value for key, value in row.items()}
-                    country_region = target_data['Country/Region']
-                    province_state = target_data['Province/State']
+                    country_region = target_data['Country/Region'].strip(' *')
+                    province_state = target_data['Province/State'].strip(' *')
 
                     # Some of this data needs to be helped along
                     if country_region == "Viet Nam":
                         country_region = "Vietnam"
-                    elif country_region == "Taiwan*":
-                        country_region = "Taiwan"
-                    elif country_region == " Azerbaijan":
-                        country_region = "Azerbaijan"
                     elif country_region == "Republic of the Congo" or country_region == "Congo (Brazzaville)" or country_region == "Congo (Kinshasa)":
                         country_region = "Congo"
                     elif country_region == "Czech Republic":
@@ -69,14 +65,18 @@ def get_daily_data():
                         country_region = "United Kingdom"
                     elif country_region == "Holy See":
                         country_region = "Vatican City"
+                    elif country_region == "":
+                        country_region = "Unknown"
 
                     if country_region is not None and country_region != '':
                         try:
                             new_daily_data[country_region]
                         except KeyError:
                             new_daily_data[country_region] = {}
+
                     if province_state is None or province_state == '':
                         province_state = "Entire"
+
                     try:
                         new_daily_data[country_region][province_state]
                     except KeyError:
@@ -99,10 +99,10 @@ def get_daily_data():
 
 def create_daily_data_line_chart_for_one_country(country_region, record):
     logger.debug(pformat(record))
-    logger.info(country_region)
+    logger.info(f"'{country_region}'")
     logger.debug(type(record))
     for province_state, daily_data in record.items():
-        logger.info(province_state)
+        logger.info(f"'{province_state}'")
         _, ax = plt.subplots()
         dates = [
             datetime.datetime.strptime(key, "%m-%d-%Y") for key in daily_data.keys()
@@ -140,12 +140,16 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
 
         plt.xlabel('Date')
         plt.ylabel('Number')
-        title = f"{country_region}-{province_state} daily COVID-19 status to {max(dates)}"
-        plt.title(title)
-        ax.legend(loc='upper center', bbox_to_anchor=(
-            0.5, -0.05), shadow=True, ncol=3)
-        # plt.show()
         date_string = max(dates).strftime("%m-%d-%Y")
+        title = f"{country_region}-{province_state} daily COVID-19 status upto {date_string}"
+        plt.title(title)
+        ax.legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, -0.05),
+            shadow=True,
+            ncol=3,
+        )
+        # plt.show()
         save_file_path = get_file_path(
             path.join(
                 'charts',
@@ -157,10 +161,29 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
         plt.close()
 
 
+def create_world_chart(data):
+
+    confirmed = {}
+    recovered = {}
+    deaths = {}
+    for country_name, country_report in data.items():
+        logger.info(country_name)
+        logger.debug(country_report)
+    global_data = {
+        'confirmed': confirmed,
+        'recovered': recovered,
+        'deaths': deaths
+    }
+    # Add data groups by date
+    # Generate chart
+
+
 if __name__ == "__main__":
-    pathlib.Path(get_file_path('charts')).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(get_file_path('charts')
+                 ).mkdir(parents=True, exist_ok=True)
     daily_data = get_daily_data()
     logger.debug(pformat(daily_data.keys()))
-    for country_name, country_report in daily_data.items():
-        create_daily_data_line_chart_for_one_country(
-            country_name, daily_data[country_name])
+    # for country_name, country_report in daily_data.items():
+    #     create_daily_data_line_chart_for_one_country(
+    #         country_name, daily_data[country_name])
+    create_world_chart(daily_data)
