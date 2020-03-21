@@ -225,10 +225,8 @@ def create_world_chart(data):
     date_dates = sorted([datetime.datetime.strptime(
         date_string, "%m-%d-%Y") for date_string in set(dates)])
     for i in range(len(date_dates)):
-        logger.info(i)
-        logger.info(date_dates)
         loop_dates = date_dates[:i+1]
-        logger.info(loop_dates)
+        logger.debug(loop_dates)
         date_string = max(loop_dates).strftime("%m-%d-%Y")
 
         save_file_path = get_file_path(
@@ -250,9 +248,9 @@ def create_world_chart(data):
             "%m-%d-%Y")] for date in loop_dates]
         recovered_values = [
             recovered[date.strftime("%m-%d-%Y")] for date in loop_dates]
-        logger.info(confirmed_values)
-        logger.info(deaths_values)
-        logger.info(recovered_values)
+        logger.debug(confirmed_values)
+        logger.debug(deaths_values)
+        logger.debug(recovered_values)
         plt.plot(
             loop_dates,
             confirmed_values,
