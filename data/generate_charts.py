@@ -103,62 +103,62 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
     logger.debug(type(record))
     for province_state, daily_data in record.items():
         logger.info(f"'{province_state}'")
-        _, ax = plt.subplots()
         dates = [
             datetime.datetime.strptime(key, "%m-%d-%Y") for key in daily_data.keys()
         ]
+
         confirmed = []
         deaths = []
         recovered = []
         for data in daily_data.values():
-            # pprint(data)
-            if data['Confirmed']:
-                confirmed.append(int(data['Confirmed']))
-            else:
-                confirmed.append(0)
-            if data['Deaths']:
-                deaths.append(int(data['Deaths']))
-            else:
-                deaths.append(0)
-            if data['Recovered']:
-                recovered.append(int(data['Recovered']))
-            else:
-                recovered.append(0)
-        plt.plot(dates, confirmed, color='orange', label="Confirmed")
-        plt.plot(dates, deaths, color='red', label="Deaths")
-        plt.plot(dates, recovered, color='green', label="Recovered")
+            confirmed.append(get_int_value(data['Confirmed']))
+            deaths.append(get_int_value(data['Deaths']))
+            recovered.append(get_int_value(data['Recovered']))
 
-        ticks_divisor = 5
-        if len(dates) > ticks_divisor:
-            ax.xaxis.set_major_locator(
-                plt.MaxNLocator(
-                    int(
-                        len(dates) / ticks_divisor
-                    )
+        for i in range(len(dates)):
+            loop_dates = dates[:i+1]
+            date_string = max(loop_dates).strftime("%m-%d-%Y")
+            save_file_path = get_file_path(
+                path.join(
+                    'charts',
+                    f"{country_region}-{province_state}-{date_string}.png"
                 )
             )
+            if path.exists(save_file_path):
+                logger.warning(f"{save_file_path} already exists")
+                continue
 
-        plt.xlabel('Date')
-        plt.ylabel('Number')
-        date_string = max(dates).strftime("%m-%d-%Y")
-        title = f"{country_region}-{province_state} daily COVID-19 status upto {date_string}"
-        plt.title(title)
-        ax.legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, -0.05),
-            shadow=True,
-            ncol=3,
-        )
-        # plt.show()
-        save_file_path = get_file_path(
-            path.join(
-                'charts',
-                f"{country_region}-{province_state}-{date_string}.png"
+            _, ax = plt.subplots()
+            plt.plot(loop_dates, confirmed[:i+1],
+                     color='orange', label="Confirmed")
+            plt.plot(loop_dates, deaths[:i+1], color='red', label="Deaths")
+            plt.plot(loop_dates, recovered[:i+1],
+                     color='green', label="Recovered")
+
+            ticks_divisor = 5
+            if len(loop_dates) > ticks_divisor:
+                ax.xaxis.set_major_locator(
+                    plt.MaxNLocator(
+                        int(
+                            len(loop_dates) / ticks_divisor
+                        )
+                    )
+                )
+
+            plt.xlabel('Date')
+            plt.ylabel('Number')
+            title = f"{country_region}-{province_state} daily COVID-19 status upto {date_string}"
+            plt.title(title)
+            ax.legend(
+                loc='upper center',
+                bbox_to_anchor=(0.5, -0.05),
+                shadow=True,
+                ncol=3,
             )
-        )
-        logger.info(f"Saving chart for {title} to {save_file_path}")
-        plt.savefig(save_file_path)
-        plt.close()
+            # plt.show()
+            logger.info(f"Saving chart for {title} to {save_file_path}")
+            plt.savefig(save_file_path)
+            plt.close()
 
 
 def get_int_value(input, country_region='unknown', province_state='unknown'):
@@ -302,7 +302,7 @@ if __name__ == "__main__":
                  ).mkdir(parents=True, exist_ok=True)
     daily_data = get_daily_data()
     logger.debug(pformat(daily_data.keys()))
-    # for country_region, country_report in daily_data.items():
-    #     create_daily_data_line_chart_for_one_country(
-    #         country_region, daily_data[country_region])
+    for country_region, country_report in daily_data.items():
+        create_daily_data_line_chart_for_one_country(
+            country_region, daily_data[country_region])
     create_world_chart(daily_data)
