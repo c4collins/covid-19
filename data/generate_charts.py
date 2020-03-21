@@ -9,7 +9,7 @@ import pathlib
 from matplotlib import pyplot as plt
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -161,21 +161,142 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
         plt.close()
 
 
+def get_int_value(input, country_region='unknown', province_state='unknown'):
+    try:
+        int_val = int(input)
+    except ValueError:
+        logger.warning(
+            f"{country_region}-{province_state} - got `{input}`, saved 0")
+        int_val = 0
+    return int_val
+
+
 def create_world_chart(data):
 
-    confirmed = {}
-    recovered = {}
-    deaths = {}
-    for country_name, country_report in data.items():
-        logger.info(country_name)
+    # Add data groups by date
+    confirmed = OrderedDict()
+    recovered = OrderedDict()
+    deaths = OrderedDict()
+    dates = []
+    cumulative_confirmed = 0
+    cumulative_recovered = 0
+    cumulative_deaths = 0
+    for country_region, country_report in data.items():
+        logger.info(country_region)
         logger.debug(country_report)
+        for province_state, province_state_report in country_report.items():
+            logger.debug(province_state)
+            logger.debug(province_state_report)
+            for date_string, daily_data in province_state_report.items():
+                logger.debug(date_string)
+                logger.debug(daily_data)
+
+                province_state_confirmed = get_int_value(
+                    daily_data['Confirmed'])
+                province_state_recovered = get_int_value(
+                    daily_data['Recovered'])
+                province_state_deaths = get_int_value(daily_data['Deaths'])
+
+                try:
+                    confirmed[date_string] += province_state_confirmed
+                    recovered[date_string] += province_state_recovered
+                    deaths[date_string] += province_state_deaths
+                except KeyError:
+                    confirmed[date_string] = province_state_confirmed
+                    recovered[date_string] = province_state_recovered
+                    deaths[date_string] = province_state_deaths
+                    dates.append(date_string)
+
+                cumulative_confirmed += province_state_confirmed
+                cumulative_recovered += province_state_recovered
+                cumulative_deaths += province_state_deaths
+
     global_data = {
         'confirmed': confirmed,
         'recovered': recovered,
-        'deaths': deaths
+        'deaths': deaths,
+        'cumulative_confirmed': cumulative_confirmed,
+        'cumulative_recovered': cumulative_recovered,
+        'cumulative_deaths': cumulative_deaths,
     }
-    # Add data groups by date
-    # Generate chart
+    logger.info(global_data)
+
+    # Generate chart(s)
+    date_dates = sorted([datetime.datetime.strptime(
+        date_string, "%m-%d-%Y") for date_string in set(dates)])
+    for i in range(len(date_dates)):
+        logger.info(i)
+        logger.info(date_dates)
+        loop_dates = date_dates[:i+1]
+        logger.info(loop_dates)
+        date_string = max(loop_dates).strftime("%m-%d-%Y")
+
+        save_file_path = get_file_path(
+            path.join(
+                'charts',
+                f"Entire-Planet-{date_string}.png"
+            )
+        )
+        if path.exists(save_file_path):
+            logger.warning(f"{save_file_path} already exists")
+            continue
+
+        _, ax = plt.subplots()
+
+        logger.info(f"{len(loop_dates)} days of data")
+        confirmed_values = [
+            confirmed[date.strftime("%m-%d-%Y")] for date in loop_dates]
+        deaths_values = [deaths[date.strftime(
+            "%m-%d-%Y")] for date in loop_dates]
+        recovered_values = [
+            recovered[date.strftime("%m-%d-%Y")] for date in loop_dates]
+        logger.info(confirmed_values)
+        logger.info(deaths_values)
+        logger.info(recovered_values)
+        plt.plot(
+            loop_dates,
+            confirmed_values,
+            color='orange',
+            label="Confirmed"
+        )
+        plt.plot(
+            loop_dates,
+            deaths_values,
+            color='red',
+            label="Deaths"
+        )
+        plt.plot(
+            loop_dates,
+            recovered_values,
+            color='green',
+            label="Recovered"
+        )
+
+        ticks_divisor = 5
+        if len(loop_dates) > ticks_divisor:
+            ax.xaxis.set_major_locator(
+                plt.MaxNLocator(
+                    int(
+                        len(loop_dates) / ticks_divisor
+                    )
+                )
+            )
+        plt.xlabel('Date')
+        plt.ylabel('Number')
+
+        title = f"Entire Planet daily COVID-19 status upto {date_string}"
+        logger.info(title)
+        plt.title(title)
+        ax.legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, -0.05),
+            shadow=True,
+            ncol=3,
+        )
+        # plt.show()
+        logger.info(f"Saving chart for {title} to {save_file_path}")
+        plt.savefig(save_file_path)
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -183,7 +304,7 @@ if __name__ == "__main__":
                  ).mkdir(parents=True, exist_ok=True)
     daily_data = get_daily_data()
     logger.debug(pformat(daily_data.keys()))
-    # for country_name, country_report in daily_data.items():
+    # for country_region, country_report in daily_data.items():
     #     create_daily_data_line_chart_for_one_country(
-    #         country_name, daily_data[country_name])
+    #         country_region, daily_data[country_region])
     create_world_chart(daily_data)
