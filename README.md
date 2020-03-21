@@ -16,9 +16,26 @@ A collection of tools for understanding the global novel Coronavirus pandemic.
      - UIA
      - Google DataSet Publishing Language
      - GitHub datasets
+
+### Server
+
 1. `python dist/data/load_data.py`
 1. `python dist/server.py`
-
-## Usage
-
 1. Visit `http://localhost:3000/`
+
+### Charts
+
+1. `python data/generate_charts.py`
+2. wait. NOTE: This takes a long time the first time as it generates a chart for each day of data for each country_region in the data and then for the whole world too, but it only creates a new image if the old one doesn't exist - so after you do the first run it's as fast as it was before but you have a bunch of extra charts to play with
+3. look at images
+
+## To-Do
+
+- animated gifs
+- finish the map geography (just load the geojson file rather than using the db)
+- add date to map
+- add sortable data charts to website
+- auto-generate charts every day
+- show charts on website
+- dockerize
+- deploy website somewhere public
