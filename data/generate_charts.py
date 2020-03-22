@@ -6,6 +6,7 @@ import csv
 import datetime
 import logging
 import pathlib
+import imageio
 from matplotlib import pyplot as plt
 
 
@@ -97,12 +98,13 @@ def get_daily_data():
     return new_daily_data
 
 
-def create_daily_data_line_chart_for_one_country(country_region, record):
+def create_daily_data_line_chart_for_one_country(country_region, record, generate_gif=True):
     logger.debug(pformat(record))
     logger.info(f"'{country_region}'")
     logger.debug(type(record))
     for province_state, daily_data in record.items():
         logger.info(f"'{province_state}'")
+        image_file_paths = []
         dates = [
             datetime.datetime.strptime(key, "%m-%d-%Y") for key in daily_data.keys()
         ]
@@ -124,6 +126,7 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
                     f"{country_region}-{province_state}-{date_string}.png"
                 )
             )
+            image_file_paths.append(save_file_path)
             if path.exists(save_file_path):
                 logger.warning(f"{save_file_path} already exists")
                 continue
@@ -160,6 +163,19 @@ def create_daily_data_line_chart_for_one_country(country_region, record):
             plt.savefig(save_file_path)
             plt.close()
 
+        if generate_gif:
+            gif_path = get_file_path(
+                path.join(
+                    'charts', f"{country_region}-{province_state}-{date_string}.gif")
+            )
+            if not path.exists(gif_path):
+                imageio.mimsave(
+                    gif_path,
+                    [
+                        imageio.imread(filename) for filename in image_file_paths
+                    ]
+                )
+
 
 def get_int_value(input, country_region='unknown', province_state='unknown'):
     try:
@@ -171,7 +187,7 @@ def get_int_value(input, country_region='unknown', province_state='unknown'):
     return int_val
 
 
-def create_world_chart(data):
+def create_world_chart(data, generate_gif=True):
 
     # Add data groups by date
     confirmed = OrderedDict()
@@ -181,6 +197,7 @@ def create_world_chart(data):
     cumulative_confirmed = 0
     cumulative_recovered = 0
     cumulative_deaths = 0
+    image_file_paths = []
     for country_region, country_report in data.items():
         logger.info(country_region)
         logger.debug(country_report)
@@ -235,6 +252,7 @@ def create_world_chart(data):
                 f"Entire-Planet-{date_string}.png"
             )
         )
+        image_file_paths.append(save_file_path)
         if path.exists(save_file_path):
             logger.warning(f"{save_file_path} already exists")
             continue
@@ -251,23 +269,18 @@ def create_world_chart(data):
         logger.debug(confirmed_values)
         logger.debug(deaths_values)
         logger.debug(recovered_values)
+
         plt.plot(
-            loop_dates,
-            confirmed_values,
-            color='orange',
-            label="Confirmed"
+            loop_dates, confirmed_values,
+            color='orange', label="Confirmed"
         )
         plt.plot(
-            loop_dates,
-            deaths_values,
-            color='red',
-            label="Deaths"
+            loop_dates, deaths_values,
+            color='red', label="Deaths"
         )
         plt.plot(
-            loop_dates,
-            recovered_values,
-            color='green',
-            label="Recovered"
+            loop_dates, recovered_values,
+            color='green', label="Recovered"
         )
 
         ticks_divisor = 5
@@ -295,6 +308,15 @@ def create_world_chart(data):
         logger.info(f"Saving chart for {title} to {save_file_path}")
         plt.savefig(save_file_path)
         plt.close()
+
+    if generate_gif:
+        gif_path = get_file_path(
+            path.join('charts', f"Entire-Planet-{date_string}.gif"))
+        if not path.exists(gif_path):
+            imageio.mimsave(
+                gif_path,
+                [imageio.imread(filename) for filename in image_file_paths]
+            )
 
 
 if __name__ == "__main__":

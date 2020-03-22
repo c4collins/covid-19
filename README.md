@@ -26,12 +26,12 @@ A collection of tools for understanding the global novel Coronavirus pandemic.
 ### Charts
 
 1. `python data/generate_charts.py`
-2. wait. NOTE: This takes a long time the first time as it generates a chart for each day of data for each country_region in the data and then for the whole world too, but it only creates a new image if the old one doesn't exist - so after you do the first run it's as fast as it was before but you have a bunch of extra charts to play with
-3. look at images
+1. wait. NOTE: This takes a long time the first time as it generates a chart for each day of data for each country_region in the data and then for the whole world too, but it only creates a new image if the old one doesn't exist - so after you do the first run it's as fast as it was before but you have a bunch of extra charts to play with. Seriously, go walk your dog or something while this runs the first time; it's like 45 seconds per day of charts created on my fairly new gaming desktop.
+   1. Since adding animated GIFs this takes even longer!
+1. look at images
 
 ## To-Do
 
-- animated gifs
 - finish the map geography (just load the geojson file rather than using the db)
 - add date to map
 - add sortable data charts to website

@@ -1,6 +1,7 @@
 node_modules/
 .vscode/
 data/charts/*.png
+data/charts/*.gif
 data/*.csv
 data/*.geojson
 *.sqlite3
